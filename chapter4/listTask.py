@@ -158,3 +158,15 @@
     
 # for student in students: 
 #     print(f"\nStudent Name: {student[0]}, Marks: {student[1]}, Age: {student[2]}")
+
+
+# students marks and then sorted it 
+
+# students = []
+
+# for i in range(3):
+#     studentMarks = int(input(f"Enter marks of # {i + 1} : "))
+#     students.append(studentMarks)
+
+#     students.sort()
+#     print(students)
