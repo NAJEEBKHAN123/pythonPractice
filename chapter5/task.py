@@ -17,8 +17,11 @@ student = {
 # print(student.keys())
 # print(student.values())
 # print(student.items())
-student.pop('marks')
-print(student)
+# student.pop('marks')
+# print(student)
+
+
+
 
 
 
