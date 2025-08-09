@@ -273,11 +273,64 @@ class BankAccount:
 # print(cir.area())
 
 
+# 1. Library Management System 📚
+# Base Class: LibraryItem
+
+# Attributes: title, author, year
+
+# Method: display_info()
+
+# Child Classes:
+
+# Book → Extra attribute: pages
+
+
+
+# Task:
+
+# Create a list of mixed Book and Magazine objects and display their details using a loop.
+
+class LibraryItem:
+    def __init__(self, title, author, year):
+        self.title = title
+        self.author = author
+        self.year = year
+    
+    def display_info(self):
+        print(f"Book Title: {self.title}")
+        print(f"Book Author: {self.author}")
+        print(f"Book Year: {self.year}")
 
         
+class Book(LibraryItem):
+    def __init__(self, title, author, year, pages):
+        super().__init__(title,author,year)
+        self.pages = pages
 
+    def display_info(self):
+        super().display_info()
+        print(f"Book pages: {self.pages}")
+
+class Magazine(LibraryItem):
+    def __init__(self, title, author, year, issueNumber):
+        super().__init__(title,author,year)
+        self.issueNumber = issueNumber
+
+    def display_info(self):
+        super().display_info()
+        print(f"Book Issue No: {self.issueNumber}")
+    
 
     
+library = [
+    Book("Python Basics", "John Doe", 2023, 350),
+    Magazine("Tech Today", "Jane Smith", 2025, "March")
+]
+
+for item in library:
+    item.display_info()
+    print("-----")
+
 
 
         
