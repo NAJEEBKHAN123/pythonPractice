@@ -290,50 +290,127 @@ class BankAccount:
 
 # Create a list of mixed Book and Magazine objects and display their details using a loop.
 
-class LibraryItem:
-    def __init__(self, title, author, year):
-        self.title = title
-        self.author = author
-        self.year = year
+# class LibraryItem:
+#     def __init__(self, title, author, year):
+#         self.title = title
+#         self.author = author
+#         self.year = year
     
-    def display_info(self):
-        print(f"Book Title: {self.title}")
-        print(f"Book Author: {self.author}")
-        print(f"Book Year: {self.year}")
+#     def display_info(self):
+#         print(f"Book Title: {self.title}")
+#         print(f"Book Author: {self.author}")
+#         print(f"Book Year: {self.year}")
 
         
-class Book(LibraryItem):
-    def __init__(self, title, author, year, pages):
-        super().__init__(title,author,year)
-        self.pages = pages
+# class Book(LibraryItem):
+#     def __init__(self, title, author, year, pages):
+#         super().__init__(title,author,year)
+#         self.pages = pages
 
-    def display_info(self):
-        super().display_info()
-        print(f"Book pages: {self.pages}")
+#     def display_info(self):
+#         super().display_info()
+#         print(f"Book pages: {self.pages}")
 
-class Magazine(LibraryItem):
-    def __init__(self, title, author, year, issueNumber):
-        super().__init__(title,author,year)
-        self.issueNumber = issueNumber
+# class Magazine(LibraryItem):
+#     def __init__(self, title, author, year, issueNumber):
+#         super().__init__(title,author,year)
+#         self.issueNumber = issueNumber
 
-    def display_info(self):
-        super().display_info()
-        print(f"Book Issue No: {self.issueNumber}")
+#     def display_info(self):
+#         super().display_info()
+#         print(f"Book Issue No: {self.issueNumber}")
     
 
     
-library = [
-    Book("Python Basics", "John Doe", 2023, 350),
-    Magazine("Tech Today", "Jane Smith", 2025, "March")
-]
+# library = [
+#     Book("Python Basics", "John Doe", 2023, 350),
+#     Magazine("Tech Today", "Jane Smith", 2025, "March")
+# ]
 
-for item in library:
-    item.display_info()
-    print("-----")
+# for item in library:
+#     item.display_info()
+#     print("-----")
 
 
+# 2. Online Store Products 🛒
+# Base Class: Product
+
+# Attributes: name, price
+
+# Method: display_info()
+
+# Child Classes:
+
+# Electronics → Extra attribute: warranty
+
+# Clothing → Extra attribute: size
+
+# Extra Challenge:
+
+# Override display_info() in each child class to include the extra attribute.
+
+# Create a method apply_discount(percent) in the base class and use it for both child classes.
+
+
+class Product:
+    def __init__(self, name, price):
+        self.name = name
+        self.price = price
+    
+    def apply_discount(self, percent):
+        """Reduce price by a given percentage"""
+        if 0 <= percent <= 100:
+            discount_amount = self.price * (percent / 100)
+            self.price -= discount_amount
+        else:
+            print("Invalid discount percentage")
+        
+
+    def display_info(self):
+        print(f"Product Name: {self.name}")
+        print(f"Product Price: {self.price}")
+    
+   
+class Electronics(Product):
+    def __init__(self, name, price, warranty):
+        super().__init__(name,price)
+        self.warranty = warranty
+    
+    def display_info(self):
+        super().display_info()
+        print(f"Product Warranty: {self.warranty}")
+    
+
+    def apply_discount(self, percent):
+        super().apply_discount(percent)
+
+class Clothing(Product):
+     def __init__(self, name, price, size):
+        super().__init__(name,price)
+        self.size = size
+
+     def display_info(self):
+        super().display_info()
+        print(f"Product Size: {self.size}")
+    
+     def apply_discount(self, percent):
+        super().apply_discount(percent)
+
+
+
+clo = Clothing("Tayyiba cottan", 3000, 4)
+clo.display_info()
+clo.apply_discount(5)
+print("\nAfter Discount:")
+clo.display_info()
 
         
+
+electronic = Electronics("headphones", 2400, "2 Years" )
+electronic.display_info()
+electronic.apply_discount(5)
+print("\nAfter Discount:")
+electronic.display_info()
 
 
 
