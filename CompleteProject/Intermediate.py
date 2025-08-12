@@ -70,76 +70,76 @@
 
 # Add a search function to find past notes.
 
-import os
+# import os
 
-FILE_NAME = 'diayapp.txt'
+# FILE_NAME = 'diayapp.txt'
 
 
-def diary_app():
-    date = input("Enter date (YYYY-MM-DD): ")
-    description = input("Enter description: ")
+# def diary_app():
+#     date = input("Enter date (YYYY-MM-DD): ")
+#     description = input("Enter description: ")
 
-    with open(FILE_NAME, 'a') as file:
-        file.write(f"{date}, {description}\n")
+#     with open(FILE_NAME, 'a') as file:
+#         file.write(f"{date}, {description}\n")
     
-    print("note added!")
+#     print("note added!")
 
 
-def search_note():
-    if not os.path.exists(FILE_NAME):
-        print("📭 No diary entries found!")
-        return
+# def search_note():
+#     if not os.path.exists(FILE_NAME):
+#         print("📭 No diary entries found!")
+#         return
     
-    keyword = input("Enter keyword or data for search: ").lower()
+#     keyword = input("Enter keyword or data for search: ").lower()
 
     
-    with open(FILE_NAME, 'r') as file:
-       notes = file.readline()
+#     with open(FILE_NAME, 'r') as file:
+#        notes = file.readline()
     
 
-    print("\nDate\t\tDescription")
-    print('-'*40)
-    found = False
-    for note in notes:
-        note = note.strip()
+#     print("\nDate\t\tDescription")
+#     print('-'*40)
+#     found = False
+#     for note in notes:
+#         note = note.strip()
 
-        if not note:
-            continue
-        parts = note.split(",", 1)
-        if len(parts) != 2:  
-            continue
+#         if not note:
+#             continue
+#         parts = note.split(",", 1)
+#         if len(parts) != 2:  
+#             continue
         
-        date, description = parts
-        if keyword in date.lower() or keyword in description.lower():
-         print(f"{date}\t{description}")
-         found = True
+#         date, description = parts
+#         if keyword in date.lower() or keyword in description.lower():
+#          print(f"{date}\t{description}")
+#          found = True
        
-    if not found:
-        print('No matching notes found.')
+#     if not found:
+#         print('No matching notes found.')
 
-while True:
-    print("\n📓 Personal Diary App")
-    print("1. Add Note")
-    print("2. Search Notes")
-    print("3. Exit")
+# while True:
+#     print("\nPersonal Diary App")
+#     print("1. Add Note")
+#     print("2. Search Notes")
+#     print("3. Exit")
 
-    choice = input("Enter an option: ")
+#     choice = input("Enter an option: ")
 
-    if choice == "1":
-        diary_app()
-    elif choice == "2":
-        search_note()
-    elif choice == "3":
-        print("👋 Goodbye!")
-        break
-    else:
-        print("Invalid choice, try again!")
-
-
+#     if choice == "1":
+#         diary_app()
+#     elif choice == "2":
+#         search_note()
+#     elif choice == "3":
+#         print(" Goodbye!")
+#         break
+#     else:
+#         print("Invalid choice, try again!")
 
 
 
-        
+
+
+
 
 
 
