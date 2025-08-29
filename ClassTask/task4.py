@@ -4,8 +4,11 @@ class TextProcessor:
     def __init__(self, filename):
         self.filename = filename
         self.lines = []
+        
+        
     
     def read_file(self):
+        
         try:
             with open(self.filename, 'r') as file:
                 self.lines = [line.strip() for line in file.readlines()]
