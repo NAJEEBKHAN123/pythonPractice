@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 import sqlite3
 import json
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 # ================================
 # Database Setup
@@ -16,37 +16,42 @@ class DatabaseManager:
 
     def init_db(self):
         """Initialize database tables"""
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        
-        # Accounts table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS accounts (
-                acc_number TEXT PRIMARY KEY,
-                holder_name TEXT NOT NULL,
-                pin TEXT NOT NULL,
-                balance REAL NOT NULL DEFAULT 0,
-                acc_type TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Transactions table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                acc_number TEXT NOT NULL,
-                transaction_type TEXT NOT NULL,
-                amount REAL NOT NULL,
-                description TEXT,
-                related_account TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (acc_number) REFERENCES accounts (acc_number)
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            
+            # Accounts table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS accounts (
+                    acc_number TEXT PRIMARY KEY,
+                    holder_name TEXT NOT NULL,
+                    pin TEXT NOT NULL,
+                    balance REAL NOT NULL DEFAULT 0,
+                    acc_type TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Transactions table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    acc_number TEXT NOT NULL,
+                    transaction_type TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    description TEXT,
+                    related_account TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (acc_number) REFERENCES accounts (acc_number)
+                )
+            ''')
+            
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error as e:
+            print(f"Database initialization error: {e}")
+            return False
 
     def execute_query(self, query, params=(), fetch=False):
         """Execute SQL query with error handling"""
@@ -58,14 +63,14 @@ class DatabaseManager:
             if fetch:
                 result = cursor.fetchall()
             else:
-                result = None
-                
+                result = cursor.rowcount  # Return number of affected rows
+            
             conn.commit()
             conn.close()
             return result
         except sqlite3.Error as e:
             print(f"Database error: {e}")
-            return None
+            return -1  # Return -1 for error
 
     def get_account(self, acc_number):
         """Get account details"""
@@ -78,32 +83,49 @@ class DatabaseManager:
 
     def create_account(self, acc_number, holder_name, pin, balance, acc_type):
         """Create new account"""
-        return self.execute_query(
-            "INSERT INTO accounts (acc_number, holder_name, pin, balance, acc_type) VALUES (?, ?, ?, ?, ?)",
-            (acc_number, holder_name, pin, float(balance), acc_type)
-        )
+        try:
+            # First check if account already exists
+            if self.account_exists(acc_number):
+                return False, "Account already exists"
+                
+            result = self.execute_query(
+                "INSERT INTO accounts (acc_number, holder_name, pin, balance, acc_type) VALUES (?, ?, ?, ?, ?)",
+                (acc_number, holder_name, pin, float(balance), acc_type)
+            )
+            
+            if result == 1:  # 1 row affected means success
+                return True, "Account created successfully"
+            else:
+                return False, "Failed to create account"
+                
+        except Exception as e:
+            print(f"Create account error: {e}")
+            return False, f"Error creating account: {e}"
 
     def update_balance(self, acc_number, new_balance):
         """Update account balance"""
-        return self.execute_query(
+        result = self.execute_query(
             "UPDATE accounts SET balance = ? WHERE acc_number = ?",
             (float(new_balance), acc_number)
         )
+        return result == 1  # Return True if 1 row was updated
 
     def add_transaction(self, acc_number, transaction_type, amount, description="", related_account=None):
         """Add transaction record"""
-        return self.execute_query(
+        result = self.execute_query(
             "INSERT INTO transactions (acc_number, transaction_type, amount, description, related_account) VALUES (?, ?, ?, ?, ?)",
             (acc_number, transaction_type, float(amount), description, related_account)
         )
+        return result == 1
 
     def get_transactions(self, acc_number, limit=100):
         """Get transaction history for account"""
-        return self.execute_query(
+        result = self.execute_query(
             "SELECT * FROM transactions WHERE acc_number = ? ORDER BY timestamp DESC LIMIT ?",
             (acc_number, limit),
             fetch=True
         )
+        return result if result != -1 else []
 
     def account_exists(self, acc_number):
         """Check if account exists"""
@@ -141,14 +163,15 @@ class Account(ABC):
         
         self.__balance += amount
         # Update database
-        self.db_manager.update_balance(self.__acc_number, float(self.__balance))
-        self.db_manager.add_transaction(
-            self.__acc_number, 
-            "DEPOSIT", 
-            float(amount), 
-            "Cash deposit"
-        )
-        return True, "Deposit successful"
+        if self.db_manager.update_balance(self.__acc_number, float(self.__balance)):
+            self.db_manager.add_transaction(
+                self.__acc_number, 
+                "DEPOSIT", 
+                float(amount), 
+                "Cash deposit"
+            )
+            return True, "Deposit successful"
+        return False, "Database update failed"
 
     # Withdraw
     def withdraw(self, amount):
@@ -158,14 +181,15 @@ class Account(ABC):
         if amount <= self.__balance:
             self.__balance -= amount
             # Update database
-            self.db_manager.update_balance(self.__acc_number, float(self.__balance))
-            self.db_manager.add_transaction(
-                self.__acc_number, 
-                "WITHDRAWAL", 
-                float(amount), 
-                "Cash withdrawal"
-            )
-            return True, "Withdraw successful"
+            if self.db_manager.update_balance(self.__acc_number, float(self.__balance)):
+                self.db_manager.add_transaction(
+                    self.__acc_number, 
+                    "WITHDRAWAL", 
+                    float(amount), 
+                    "Cash withdrawal"
+                )
+                return True, "Withdraw successful"
+            return False, "Database update failed"
         else:
             return False, "Insufficient balance"
 
@@ -179,25 +203,26 @@ class Account(ABC):
             other_account.__balance += amount
 
             # Update both accounts in database
-            self.db_manager.update_balance(self.__acc_number, float(self.__balance))
-            self.db_manager.update_balance(other_account.get_acc_number(), float(other_account.get_balance()))
+            if (self.db_manager.update_balance(self.__acc_number, float(self.__balance)) and 
+                self.db_manager.update_balance(other_account.get_acc_number(), float(other_account.get_balance()))):
 
-            # Record transactions for both accounts
-            self.db_manager.add_transaction(
-                self.__acc_number, 
-                "TRANSFER_OUT", 
-                float(amount), 
-                f"Transfer to {other_account.get_acc_number()}",
-                other_account.get_acc_number()
-            )
-            self.db_manager.add_transaction(
-                other_account.get_acc_number(), 
-                "TRANSFER_IN", 
-                float(amount), 
-                f"Transfer from {self.__acc_number}",
-                self.__acc_number
-            )
-            return True, "Transfer successful"
+                # Record transactions for both accounts
+                self.db_manager.add_transaction(
+                    self.__acc_number, 
+                    "TRANSFER_OUT", 
+                    float(amount), 
+                    f"Transfer to {other_account.get_acc_number()}",
+                    other_account.get_acc_number()
+                )
+                self.db_manager.add_transaction(
+                    other_account.get_acc_number(), 
+                    "TRANSFER_IN", 
+                    float(amount), 
+                    f"Transfer from {self.__acc_number}",
+                    self.__acc_number
+                )
+                return True, "Transfer successful"
+            return False, "Database update failed"
         else:
             return False, "Insufficient balance"
 
@@ -263,23 +288,20 @@ class Bank:
         if not acc_number or not holder_name or not pin:
             return False, "Account number, holder name, and PIN are required"
         
-        # Check if account exists in database
-        if self.db_manager.account_exists(acc_number):
-            return False, "Account already exists"
-
-        # Create account in database
-        success = self.db_manager.create_account(acc_number, holder_name, pin, 0, acc_type)
-        if success is None:
-            return False, "Failed to create account"
-
-        # Create account object
-        if acc_type.lower() == "savings":
-            account = SavingsAccount(acc_number, holder_name, pin, 0, self.db_manager)
-        else:
-            account = CurrentAccount(acc_number, holder_name, pin, 0, self.db_manager)
+        # Use the improved create_account method from DatabaseManager
+        success, message = self.db_manager.create_account(acc_number, holder_name, pin, 0, acc_type)
         
-        self.accounts[acc_number] = account
-        return True, f"{acc_type} account created successfully!"
+        if success:
+            # Create account object only if database creation was successful
+            if acc_type.lower() == "savings":
+                account = SavingsAccount(acc_number, holder_name, pin, 0, self.db_manager)
+            else:
+                account = CurrentAccount(acc_number, holder_name, pin, 0, self.db_manager)
+            
+            self.accounts[acc_number] = account
+            return True, f"{acc_type} account created successfully!"
+        else:
+            return False, message
 
     def get_account(self, acc_number):
         # Check cache first
@@ -458,11 +480,11 @@ elif choice == "Database Info":
     
     # Show account count
     result = db_manager.execute_query("SELECT COUNT(*) FROM accounts", fetch=True)
-    st.write(f"Total accounts: {result[0][0] if result else 0}")
+    st.write(f"Total accounts: {result[0][0] if result and result != -1 else 0}")
     
     # Show transaction count
     result = db_manager.execute_query("SELECT COUNT(*) FROM transactions", fetch=True)
-    st.write(f"Total transactions: {result[0][0] if result else 0}")
+    st.write(f"Total transactions: {result[0][0] if result and result != -1 else 0}")
     
     # Show recent transactions
     st.write("Recent Transactions:")
@@ -470,7 +492,7 @@ elif choice == "Database Info":
         "SELECT acc_number, transaction_type, amount, timestamp FROM transactions ORDER BY timestamp DESC LIMIT 10", 
         fetch=True
     )
-    if result:
+    if result and result != -1:
         for trans in result:
             st.write(f"{trans[3]}: {trans[0]} - {trans[1]} - ${trans[2]:.2f}")
     else:
